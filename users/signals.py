@@ -24,7 +24,7 @@ def create_follower(sender, instance, created, **kwargs):
     caseygramMainUser = User.objects.get(id=1)
     if created:
         Follower.objects.create(follower=instance, being_followed=instance)
-        if not instance.pk == 1:
+        if instance.pk != 1:
             Follower.objects.create(follower=instance, being_followed=caseygramMainUser)
             Follower.objects.create(follower=caseygramMainUser, being_followed=instance)
 # creates a follower object so upon account creation, user is following my account and themselves.

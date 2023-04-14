@@ -32,18 +32,17 @@ class PostListView(LoginRequiredMixin, ListView):
 
 
 def likePost(request):
-    if request.method == 'GET':
-        post_id = request.GET['post_id']
-        likedpost = Post.objects.get(pk=post_id)  # getting the liked post
-
-        if Like.objects.filter(post=likedpost, liker=request.user).exists():
-            Like.objects.filter(post=likedpost, liker=request.user).delete()
-        else:
-            m = Like(post=likedpost, liker=request.user)  # creating like object
-            m.save()  # saves into database
-        return HttpResponse(likedpost.likes.count())
-    else:
+    if request.method != 'GET':
         return HttpResponse("Request method is not a GET")
+    post_id = request.GET['post_id']
+    likedpost = Post.objects.get(pk=post_id)  # getting the liked post
+
+    if Like.objects.filter(post=likedpost, liker=request.user).exists():
+        Like.objects.filter(post=likedpost, liker=request.user).delete()
+    else:
+        m = Like(post=likedpost, liker=request.user)  # creating like object
+        m.save()  # saves into database
+    return HttpResponse(likedpost.likes.count())
 
 
 def search(request):
@@ -100,9 +99,7 @@ class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     def test_func(self):
         post = self.get_object()
-        if self.request.user == post.author:
-            return True
-        return False
+        return self.request.user == post.author
 
 
 class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
@@ -111,9 +108,7 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         post = self.get_object()
-        if self.request.user == post.author:
-            return True
-        return False
+        return self.request.user == post.author
 
 
 class CommentCreateView(LoginRequiredMixin, CreateView):
@@ -136,9 +131,7 @@ class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     def test_func(self):
         comment = self.get_object()
-        if self.request.user == comment.author:
-            return True
-        return False
+        return self.request.user == comment.author
 
 
 class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
@@ -147,9 +140,7 @@ class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         comment = self.get_object()
-        if self.request.user == comment.author:
-            return True
-        return False
+        return self.request.user == comment.author
 
 
 class FollowerListView(LoginRequiredMixin, ListView):
@@ -173,21 +164,15 @@ class LikeListView(LoginRequiredMixin, ListView):
 
 
 def aboutUs(request):
-    # displays http response for about us page
-    response = render(request, 'homepage/aboutUs.html', {'title': 'About Us'})
-    return response
+    return render(request, 'homepage/aboutUs.html', {'title': 'About Us'})
 
 
 def redirectAboutView(request):
-    # redirects from /about to /about/us and displays http response of def aboutUs
-    response = redirect('us/')
-    return response
+    return redirect('us/')
 
 
 def aboutJobs(request):
-    # displays http response for about jobs page
-    response = HttpResponse('<h1>Caseygram About Jobs</h1>')
-    return response
+    return HttpResponse('<h1>Caseygram About Jobs</h1>')
 
 
 class ExploreListView(LoginRequiredMixin, ListView):
@@ -200,17 +185,13 @@ class ExploreListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
 
         followed_qs = Follower.objects.filter(follower=self.request.user)
-        followed_users = []
-        for i in followed_qs:
-            followed_users.append(i.being_followed.username)
+        followed_users = [i.being_followed.username for i in followed_qs]
         context['followers'] = Follower.objects.filter(follower__username=self.request.user)
 
         context['profiles'] = Profile.objects.exclude(user=self.request.user).exclude(user__username__in=followed_users).order_by('-user__date_joined')[:4]
 
-        followlist = []
         qs = Follower.objects.exclude(being_followed=self.request.user).filter(follower=self.request.user)
-        for i in qs:
-            followlist.append(i.being_followed.username)
+        followlist = [i.being_followed.username for i in qs]
         context['followlist'] = followlist
 
         return context
@@ -226,8 +207,12 @@ def public_profile(request, username):  # learn how in bookmarks
         'followees': Follower.objects.filter(follower=obj).exclude(being_followed=obj),
         'followcheck': Follower.objects.filter(follower=request.user, being_followed=obj),
     }
-    response = render(request, 'homepage/public_profile.html', context, {'title': 'Public-Profile'})
-    return response
+    return render(
+        request,
+        'homepage/public_profile.html',
+        context,
+        {'title': 'Public-Profile'},
+    )
 
 
 class SearchListView(ListView):
@@ -243,8 +228,7 @@ class SearchListView(ListView):
 
     def get_queryset(self):
         query = self.request.GET.get('q')
-        object_list = User.objects.filter(username__icontains=query)
-        return object_list
+        return User.objects.filter(username__icontains=query)
 
 
 class LikeListView(LoginRequiredMixin, ListView):

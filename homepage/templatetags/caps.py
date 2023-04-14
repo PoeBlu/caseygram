@@ -7,10 +7,7 @@ register = template.Library()
 @register.filter
 @stringfilter
 def upper(value):
-    if ',' in value:
-        return value.split(',')[0].upper() + ' AGO'
-    else:
-        return value.upper()
+    return value.split(',')[0].upper() + ' AGO' if ',' in value else value.upper()
 
 
 upper.is_safe = True
